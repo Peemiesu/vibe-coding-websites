@@ -1,0 +1,9 @@
+1st prompt) build a type racing website with fluid animations and a leaderboard
+
+2nd prompt) it failed to implement into the file
+
+3rd prompt) the words that you need to type is overshooting the border and going off screen. Also make the words that you need to type random
+
+4th prompt) make the game single player that ask for the player's name after finishing the run and put it in the leaderboard
+
+5th prompt) change the color theme to #EFDFD1
