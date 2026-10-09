@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Task Tracker</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--text:#1d2330;--muted:#6b7385;--line:#e3e6ec;--accent:#3b6df0;--accent-t:#fff;--bad:#d64545;--soft:#eaf0ff;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171d;--card:#1d222b;--text:#e8ebf1;--muted:#98a1b3;--line:#2c3340;--accent:#6b93ff;--accent-t:#0e1220;--bad:#ff7a7a;--soft:#222c47}}
+:root[data-theme="dark"]{--bg:#14171d;--card:#1d222b;--text:#e8ebf1;--muted:#98a1b3;--line:#2c3340;--accent:#6b93ff;--accent-t:#0e1220;--bad:#ff7a7a;--soft:#222c47}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1000px;margin:0 auto;padding:20px 16px 40px}
+header{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+h1{font-size:22px;margin:0;margin-right:auto}
+h2{font-size:16px;margin:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:16px}
+input[type=text],input[type=date]{padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text);font:inherit;width:100%}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:8px;padding:8px 12px}
+button.primary{background:var(--accent);color:var(--accent-t);border-color:var(--accent)}
+.cal-h{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.cal-h b{font-size:18px;margin-right:auto}
+.dow,.days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.dow span{font-size:12px;color:var(--muted);text-align:center;padding:4px 0}
+.day{min-height:92px;border:1px solid var(--line);border-radius:8px;background:none;padding:4px;text-align:left;display:flex;flex-direction:column;gap:3px;align-items:stretch;overflow:hidden}
+.day.out{opacity:.4}
+.day.today{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.day.sel{background:var(--soft)}
+.day .num{font-size:13px;font-weight:600;padding:0 2px}
+.day.today .num{color:var(--accent)}
+.chip{font-size:11.5px;line-height:1.3;padding:1px 5px;border-radius:5px;background:var(--soft);color:var(--accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip.late{background:var(--bad);color:#fff}
+.more{font-size:11px;color:var(--muted);padding-left:3px}
+.cnt{display:none}
+@media(max-width:600px){.day{min-height:54px;align-items:center}.chip,.more{display:none}.cnt{display:inline-block;font-size:11px;padding:1px 6px;border-radius:9px;background:var(--soft);color:var(--accent)}.cnt.late{background:var(--bad);color:#fff}}
+.list-h{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.list-h button{margin-left:auto}
+ul{list-style:none;margin:0;padding:0}
+li.task{display:flex;gap:10px;align-items:center;padding:10px 4px;border-bottom:1px solid var(--line)}
+li.task:last-child{border-bottom:0}
+li.task input{width:20px;height:20px;accent-color:var(--accent);flex:none}
+.t{flex:1;min-width:0;word-break:break-word}
+.d{font-size:12.5px;color:var(--muted);white-space:nowrap}
+.d.over{color:var(--bad);font-weight:600}
+.x{border:0;background:none;color:var(--muted);padding:4px 8px}
+.empty{color:var(--muted);padding:16px 4px;text-align:center}
+.tabs{display:flex;gap:6px;margin-bottom:14px}.tabs button.on{background:var(--soft);border-color:var(--accent);color:var(--accent)}
+select{font:inherit;padding:7px 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text)}
+.sortbar{display:flex;align-items:center;gap:8px;margin:8px 0;font-size:13px;color:var(--muted)}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;padding:16px;z-index:10}
+.ov.open{display:flex}
+.modal{background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:14px;padding:16px;width:100%;max-width:440px;max-height:85vh;overflow:auto}
+.modal-h{display:flex;align-items:center;margin-bottom:6px}
+.modal-h h2{margin-right:auto}
+.actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Task Tracker</h1>
+  <button id="openArc" type="button"></button>
+  <button id="openAdd" class="primary" type="button">+ Add task</button>
+</header>
+<div class="tabs"><button id="tabCal" class="on" type="button">Calendar</button><button id="tabAll" type="button">All tasks</button></div>
+<div id="vCal">
+<section class="card">
+  <div class="cal-h"><b id="mon"></b><button id="today" type="button">Today</button><button id="prev" aria-label="Previous month">‹</button><button id="next" aria-label="Next month">›</button></div>
+  <div class="dow"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
+  <div class="days" id="days"></div>
+</section>
+
+<section class="card">
+  <div class="list-h"><h2 id="lt">Upcoming tasks</h2><button id="clr" type="button" style="display:none">Show all</button></div>
+  <ul id="list"></ul>
+</section>
+</div>
+<div id="vAll" style="display:none">
+<section class="card">
+  <div class="list-h"><h2>All tasks</h2></div>
+  <div class="sortbar"><label for="allSort" style="margin:0">Order by</label><select id="allSort"><option value="soon">Time until deadline: soonest first</option><option value="far">Time until deadline: furthest first</option></select></div>
+  <ul id="allList"></ul>
+</section>
+</div>
+</div>
+
+<div class="ov" id="ovAdd"><div class="modal" role="dialog" aria-label="Add task">
+  <div class="modal-h"><h2>Add task</h2><button class="x" data-close aria-label="Close">✕</button></div>
+  <form id="f">
+    <label for="title">Task</label>
+    <input type="text" id="title" maxlength="200" placeholder="What needs doing?" required>
+    <label for="due">Deadline</label>
+    <input type="date" id="due">
+    <div class="actions"><button type="button" data-close>Cancel</button><button class="primary" type="submit">Add task</button></div>
+  </form>
+</div></div>
+
+<div class="ov" id="ovArc"><div class="modal" role="dialog" aria-label="Archive">
+  <div class="modal-h"><h2>Archive</h2><button class="x" data-close aria-label="Close">✕</button></div>
+  <div class="sortbar"><label for="arcSort" style="margin:0">Sort by</label><select id="arcSort"><option value="fin-new">Date finished: newest first</option><option value="fin-old">Date finished: oldest first</option><option value="due-soon">Deadline: earliest first</option><option value="due-late">Deadline: latest first</option></select></div>
+  <ul id="arc"></ul>
+</div></div>
+
+<script>
+(function(){
+var KEY="task-tracker-v1",tasks=[],sel=null,cur=new Date();
+cur.setDate(1);
+function load(){try{var r=localStorage.getItem(KEY);tasks=r?JSON.parse(r):[];if(!Array.isArray(tasks))tasks=[]}catch(e){tasks=[]}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(tasks))}catch(e){}}
+function iso(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+var today=iso(new Date());
+function $(id){return document.getElementById(id)}
+function fmt(s){if(!s)return"No deadline";var p=s.split("-");return new Date(+p[0],+p[1]-1,+p[2]).toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"})}
+function dn_(s){var p=s.split("-");return Date.UTC(+p[0],+p[1]-1,+p[2])/864e5}
+function until(t){if(!t.due)return"No deadline";var n=dn_(t.due)-dn_(today);if(n<0)return"Overdue by "+(-n)+(n===-1?" day":" days");if(n===0)return"Due today";if(n===1)return"Due tomorrow";return"In "+n+" days"}
+function allSort(a,b){if($("allSort").value==="far"){if(a.due&&b.due)return a.due<b.due?1:a.due>b.due?-1:a.id-b.id;if(a.due)return-1;if(b.due)return 1;return a.id-b.id}return byDue(a,b)}
+function arcSort(a,b){var m=$("arcSort").value;if(m==="fin-old")return a.doneAt-b.doneAt;if(m==="due-soon")return byDue(a,b);if(m==="due-late")return allSortFar(a,b);return b.doneAt-a.doneAt}
+function allSortFar(a,b){if(a.due&&b.due)return a.due<b.due?1:a.due>b.due?-1:a.id-b.id;if(a.due)return-1;if(b.due)return 1;return a.id-b.id}
+function byDue(a,b){if(a.due&&b.due)return a.due<b.due?-1:a.due>b.due?1:a.id-b.id;if(a.due)return-1;if(b.due)return 1;return a.id-b.id}
+function row(t,rel){
+  var li=document.createElement("li");li.className="task";
+  var c=document.createElement("input");c.type="checkbox";c.checked=t.done;c.setAttribute("aria-label",t.done?"Restore task":"Mark done");
+  c.onchange=function(){t.done=c.checked;t.doneAt=t.done?Date.now():null;save();render()};
+  var s=document.createElement("span");s.className="t";s.textContent=t.title;
+  var d=document.createElement("span");d.className="d";
+  if(t.done){d.textContent="Finished "+new Date(t.doneAt).toLocaleDateString(undefined,{month:"short",day:"numeric"})+(t.due?" · due "+fmt(t.due):"")}
+  else{d.textContent=fmt(t.due);if(t.due&&t.due<today){d.className+=" over";d.textContent="Overdue · "+d.textContent}if(rel&&t.due){d.textContent=until(t)+" · "+fmt(t.due)}}
+  var x=document.createElement("button");x.className="x";x.textContent="✕";x.setAttribute("aria-label","Delete task");
+  x.onclick=function(){tasks=tasks.filter(function(q){return q!==t});save();render()};
+  li.appendChild(c);li.appendChild(s);li.appendChild(d);li.appendChild(x);return li;
+}
+function render(){
+  var act=tasks.filter(function(t){return!t.done}).sort(byDue),dn=tasks.filter(function(t){return t.done}).sort(arcSort);
+  $("openArc").textContent="Archive ("+dn.length+")";
+  var rows=sel?act.filter(function(t){return t.due===sel}):act;
+  $("lt").textContent=sel?"Tasks for "+fmt(sel):"Upcoming tasks";
+  $("clr").style.display=sel?"":"none";
+  var ul=$("list");ul.textContent="";
+  if(!rows.length){var e=document.createElement("li");e.className="empty";e.textContent=sel?"No tasks due this day.":"Nothing to do. Add a task to get started.";ul.appendChild(e)}
+  rows.forEach(function(t){ul.appendChild(row(t))});
+  var au=$("arc");au.textContent="";
+  if(!dn.length){var e2=document.createElement("li");e2.className="empty";e2.textContent="No finished tasks yet.";au.appendChild(e2)}
+  dn.forEach(function(t){au.appendChild(row(t))});
+  var al=$("allList");al.textContent="";
+  var as=act.slice().sort(allSort);
+  if(!as.length){var e3=document.createElement("li");e3.className="empty";e3.textContent="No active tasks.";al.appendChild(e3)}
+  as.forEach(function(t){al.appendChild(row(t,true))});
+  renderCal(act);
+}
+function renderCal(act){
+  var y=cur.getFullYear(),m=cur.getMonth();
+  $("mon").textContent=cur.toLocaleDateString(undefined,{month:"long",year:"numeric"});
+  var g=$("days");g.textContent="";
+  var start=new Date(y,m,1-new Date(y,m,1).getDay()),by={};
+  act.forEach(function(t){if(t.due)(by[t.due]=by[t.due]||[]).push(t)});
+  for(var i=0;i<42;i++){
+    var d=new Date(start.getFullYear(),start.getMonth(),start.getDate()+i),k=iso(d);
+    var b=document.createElement("button");b.type="button";
+    b.className="day"+(d.getMonth()!==m?" out":"")+(k===today?" today":"")+(k===sel?" sel":"");
+    var n=document.createElement("span");n.className="num";n.textContent=d.getDate();b.appendChild(n);
+    var ts=by[k]||[];
+    ts.slice(0,3).forEach(function(t){var c=document.createElement("span");c.className="chip"+(k<today?" late":"");c.textContent=t.title;b.appendChild(c)});
+    if(ts.length>3){var mo=document.createElement("span");mo.className="more";mo.textContent="+"+(ts.length-3)+" more";b.appendChild(mo)}
+    if(ts.length){var cn=document.createElement("span");cn.className="cnt"+(k<today?" late":"");cn.textContent=ts.length;b.appendChild(cn)}
+    (function(k){b.onclick=function(){sel=sel===k?null:k;render()}})(k);
+    g.appendChild(b);
+  }
+}
+function open(id){$(id).classList.add("open")}
+function closeAll(){document.querySelectorAll(".ov").forEach(function(o){o.classList.remove("open")})}
+$("openAdd").onclick=function(){$("due").value=sel||"";open("ovAdd");setTimeout(function(){$("title").focus()},30)};
+$("openArc").onclick=function(){open("ovArc")};
+document.querySelectorAll("[data-close]").forEach(function(b){b.onclick=closeAll});
+document.querySelectorAll(".ov").forEach(function(o){o.addEventListener("click",function(e){if(e.target===o)closeAll()})});
+document.addEventListener("keydown",function(e){if(e.key==="Escape")closeAll()});
+$("prev").onclick=function(){cur.setMonth(cur.getMonth()-1);render()};
+$("next").onclick=function(){cur.setMonth(cur.getMonth()+1);render()};
+$("today").onclick=function(){cur=new Date();cur.setDate(1);render()};
+$("clr").onclick=function(){sel=null;render()};
+$("f").onsubmit=function(e){
+  e.preventDefault();
+  var t=$("title").value.trim();if(!t)return;
+  tasks.push({id:Date.now(),title:t,due:$("due").value||"",done:false,doneAt:null});
+  $("title").value="";save();closeAll();render();
+};
+function tab(all){$("vCal").style.display=all?"none":"";$("vAll").style.display=all?"":"none";$("tabCal").className=all?"":"on";$("tabAll").className=all?"on":""}
+$("tabCal").onclick=function(){tab(false)};
+$("tabAll").onclick=function(){tab(true)};
+$("allSort").onchange=render;
+$("arcSort").onchange=render;
+load();render();
+})();
+</script>
+</body>
+</html>

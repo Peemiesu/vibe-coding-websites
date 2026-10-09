@@ -1,0 +1,5 @@
+1st prompt) build me a website for tracking tasks that has a working calendar and can order list according to deadline and check off finished tasks. Finished tasks get saved as finished and archived.
+
+2nd prompt) make the calendar the main page with the add task and the archive only pop up when clicking on them
+
+3rd prompt) make an all task tab that can be ordered by time until deadline and make the archived tasks be able to be sorted by date
